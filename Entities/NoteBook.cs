@@ -3,16 +3,19 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebApiMyNote.Entities
 {
-    public class Category
+    public class NoteBook
     {
         [Key]
-        public int CategoryId { get; set; }
-        public required string CategoryName { get; set; }
-        public string CategoryDescription { get; set; } = string.Empty;
+        public int NoteId { get; set; }
+        public required string NoteTitle { get; set; }
+        public required string NoteDescription { get; set; }
         public DateTime LastUpdate { get; set; } = DateTime.Now;
         public DateTime CreateDate { get; set; } = DateTime.Now;
         [ForeignKey("User")]
         public required int UserId { get; set; }
         //public User User { get; set; }
+        [ForeignKey("Category")]
+        public required int CategoryId { get; set; }
+        //public Category Category { get; set; }
     }
 }

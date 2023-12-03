@@ -9,6 +9,7 @@ namespace WebApiMyNote.Entities
         public required string Username { get; set; }
         public required string Password { get; set; }
         public required string FullName { get; set; }
+        public DateTime LastUpdate { get; set; } = DateTime.Now;
         public DateTime CreateDate { get; set; } = DateTime.Now;
     }
 }
