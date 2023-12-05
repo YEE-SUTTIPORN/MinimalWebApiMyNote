@@ -12,3 +12,38 @@ Accept: application/json
 
 GET {{WebApiMyNote_HostAddress}}/Users/GetById?id=1
 Accept: application/json
+
+###
+
+POST {{WebApiMyNote_HostAddress}}/Users/Insert
+Content-Type: application/json
+
+{
+  "userId": 0,
+  "username": "Ayee",
+  "password": "123456",
+  "fullName": "Suttiporn Srisawad",
+  "lastUpdate": "2023-12-03T16:10:06.794",
+  "createDate": "2023-12-03T16:10:06.794"
+}
+
+###
+
+POST {{WebApiMyNote_HostAddress}}/Category/Insert
+
+
+###
+GET {{WebApiMyNote_HostAddress}}/Category/GetAll?=1
+Accept: application/json
+
+POST {{WebApiMyNote_HostAddress}}/NoteBooks/Insert
+
+###
+
+DELETE {{WebApiMyNote_HostAddress}}/Categories/Delete
+
+###
+
+POST {{WebApiMyNote_HostAddress}}/Categories/Insert
+
+###
