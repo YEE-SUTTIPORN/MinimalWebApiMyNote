@@ -9,6 +9,7 @@ using System.Security.Claims;
 using System.Text;
 using WebApiMyNote.Data;
 using WebApiMyNote.Entities;
+using WebApiMyNote.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -115,6 +116,14 @@ userEndPoint.MapPost("/Insert", [Authorize] async (User user, NoteBookDbContext 
 
     try
     {
+        var CheckExistUsername = await db.Users.FirstOrDefaultAsync(x => x.Username == user.Username);
+        if (CheckExistUsername != null) return Results.BadRequest(new ResponseMessage<User>(false, "ชื่อผู้ใช้งานถูกใช้แล้ว!", user));
+
+        user.Password = PasswordHasher.HashPassword(user.Password);
+        user.UserId = 0;
+        user.CreateDate = DateTime.Now;
+        user.LastUpdate = DateTime.Now;
+
         await db.Users.AddAsync(user);
         int status = await db.SaveChangesAsync();
 
@@ -156,9 +165,7 @@ userEndPoint.MapPut("/Update", [Authorize] async (User obj, NoteBookDbContext db
     if (user == null)
         return Results.NotFound(new ResponseMessage<User>(false, "ไม่พบผู้ใช้งาน", user));
 
-    user.Username = obj.Username;
     user.FullName = obj.FullName;
-    user.Password = obj.Password;
     user.LastUpdate = DateTime.Now;
 
     try
@@ -172,6 +179,57 @@ userEndPoint.MapPut("/Update", [Authorize] async (User obj, NoteBookDbContext db
     catch (Exception ex)
     {
         return Results.BadRequest(new ResponseMessage<User>(false, ex.Message, user));
+    }
+});
+
+userEndPoint.MapPut("/ChangePassword", [Authorize] async (User obj, NoteBookDbContext db) =>
+{
+    if (obj == null)
+        return Results.BadRequest();
+
+    var user = await db.Users.FirstOrDefaultAsync(x => x.UserId == obj.UserId);
+
+    if (user == null)
+        return Results.NotFound(new ResponseMessage<User>(false, "ไม่พบผู้ใช้งาน", user));
+
+    user.Password = PasswordHasher.HashPassword(obj.Password);
+    user.LastUpdate = DateTime.Now;
+
+    try
+    {
+        db.Users.Update(user);
+        int status = await db.SaveChangesAsync();
+
+        return status == 0 ? Results.BadRequest(new ResponseMessage<User>(false, "เปลี่ยนรหัสผ่านผู้ใช้งานไม่สำเร็จ!", user))
+        : Results.Ok(new ResponseMessage<User>(true, "เปลี่ยนรหัสผ่านผู้ใช้งานเรียบร้อยแล้ว", user));
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new ResponseMessage<User>(false, ex.Message, user));
+    }
+});
+
+userEndPoint.MapPost("/UserLogin", [Authorize] async (User obj, NoteBookDbContext db) =>
+{
+    if (obj == null)
+        return Results.BadRequest();
+
+    try
+    {
+        var user = await db.Users.FirstOrDefaultAsync(x => x.Username == obj.Username);
+        if (user == null)
+            return Results.NotFound(new ResponseMessage<User>(false, "ไม่พบผู้ใช้งาน", obj));
+
+        bool checkLogin = user.Username == obj.Username && PasswordHasher.VerifyPassword(obj.Password, user.Password);
+
+        if (checkLogin)
+            return Results.Ok(new ResponseMessage<User>(true, "เข้าสู่ระบบเรียบร้อยแล้ว", obj));
+
+        return Results.BadRequest(new ResponseMessage<User>(false, "เข้าสู่ระบบไม่สำเร็จ!", obj));
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new ResponseMessage<User>(false, ex.Message, obj));
     }
 });
 
@@ -196,6 +254,7 @@ categoryEndPoint.MapPost("/Insert", [Authorize] async (Category obj, NoteBookDbC
 
     try
     {
+        obj.CategoryId = 0;
         await db.Categories.AddAsync(obj);
         int status = await db.SaveChangesAsync();
         return status == 0 ? Results.BadRequest(new ResponseMessage<Category>(false, "เพิ่มหมวดหมู่ไม่สำเร็จ!", obj))
@@ -274,6 +333,7 @@ noteBookEndPoint.MapPost("/Insert", [Authorize] async (NoteBook obj, NoteBookDbC
 
     try
     {
+        obj.NoteId = 0;
         await db.Notes.AddAsync(obj);
         return await db.SaveChangesAsync() == 0 ? Results.BadRequest(new ResponseMessage<NoteBook>(false, "เพิ่มโน๊ตไม่สำเร็จ!", obj))
         : Results.Ok(new ResponseMessage<NoteBook>(true, "เพิ่มโน๊ตเรียบร้อยแล้ว", obj));
